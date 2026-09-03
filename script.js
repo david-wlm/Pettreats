@@ -109,6 +109,7 @@ const categories = ["全部", "鸡肉", "冻干", "洁齿", "训练奖励"];
 const state = {
   activeCategory: "全部",
   selectedProductId: null,
+  hotlistIds: [],
   cart: []
 };
 
@@ -120,8 +121,13 @@ const cartCountEl = document.querySelector("#cartCount");
 const cartTotalEl = document.querySelector("#cartTotal");
 const checkoutButton = document.querySelector("#checkoutButton");
 const detailModalEl = document.querySelector("#detailModal");
+const hotlistModalEl = document.querySelector("#hotlistModal");
+const hotlistItemsEl = document.querySelector("#hotlistItems");
+const hotlistSummaryEl = document.querySelector("#hotlistSummary");
 const successModalEl = document.querySelector("#successModal");
+const toastEl = document.querySelector("#toast");
 const detailAddButton = document.querySelector("#detailAddButton");
+let toastTimer;
 
 function yuan(value) {
   return `¥${value}`;
@@ -129,6 +135,12 @@ function yuan(value) {
 
 function getProduct(id) {
   return products.find(product => product.id === id);
+}
+
+function getHotlistProducts() {
+  return [...products]
+    .sort((a, b) => b.monthlySales - a.monthlySales)
+    .slice(0, 5);
 }
 
 function getCartQuantity() {
@@ -243,6 +255,36 @@ function removeFromCart(id) {
   renderCart();
 }
 
+function showToast(message, anchor) {
+  window.clearTimeout(toastTimer);
+  toastEl.textContent = message;
+  toastEl.style.left = "";
+  toastEl.style.top = "";
+  toastEl.style.right = "";
+  toastEl.style.bottom = "";
+  toastEl.classList.add("show");
+
+  if (anchor) {
+    const anchorRect = anchor.getBoundingClientRect();
+    const toastRect = toastEl.getBoundingClientRect();
+    const gap = 10;
+    const left = Math.min(
+      Math.max(16, anchorRect.left + (anchorRect.width - toastRect.width) / 2),
+      window.innerWidth - toastRect.width - 16
+    );
+    const top = anchorRect.top >= toastRect.height + gap + 16
+      ? anchorRect.top - toastRect.height - gap
+      : anchorRect.bottom + gap;
+
+    toastEl.style.left = `${left}px`;
+    toastEl.style.top = `${Math.min(top, window.innerHeight - toastRect.height - 16)}px`;
+  }
+
+  toastTimer = window.setTimeout(() => {
+    toastEl.classList.remove("show");
+  }, 2200);
+}
+
 function setPanelOpen(panel, isOpen) {
   panel.classList.toggle("open", isOpen);
   panel.setAttribute("aria-hidden", String(!isOpen));
@@ -279,6 +321,58 @@ function closeDetail() {
   setPanelOpen(detailModalEl, false);
 }
 
+function renderHotlist() {
+  const hotlistProducts = getHotlistProducts();
+  state.hotlistIds = hotlistProducts.map(product => product.id);
+  hotlistSummaryEl.textContent = `按月销排序，精选前 5 款，总月销 ${hotlistProducts.reduce((sum, product) => sum + product.monthlySales, 0)}。`;
+
+  hotlistItemsEl.innerHTML = hotlistProducts.map((product, index) => `
+    <article class="hotlist-item">
+      <span class="hotlist-rank">#${index + 1}</span>
+      <img src="${product.image}" alt="${product.name}">
+      <div class="hotlist-body">
+        <div class="hotlist-meta">
+          <span class="product-category">${product.category}</span>
+          <strong class="product-price">${yuan(product.price)}</strong>
+        </div>
+        <h3>${product.name}</h3>
+        <div class="product-sales">月销：${product.monthlySales}</div>
+        <p>${product.tagline}</p>
+        <dl class="hotlist-detail-list">
+          <div>
+            <dt>规格</dt>
+            <dd>${product.spec}</dd>
+          </div>
+          <div>
+            <dt>适用</dt>
+            <dd>${product.suitableFor}</dd>
+          </div>
+          <div>
+            <dt>适口性</dt>
+            <dd>${product.palatability}</dd>
+          </div>
+          <div>
+            <dt>成分</dt>
+            <dd>${product.ingredients}</dd>
+          </div>
+        </dl>
+        <div class="hotlist-actions">
+          <button class="button primary" type="button" data-hot-add="${product.id}">加入购物车</button>
+        </div>
+      </div>
+    </article>
+  `).join("");
+}
+
+function openHotlist() {
+  renderHotlist();
+  setPanelOpen(hotlistModalEl, true);
+}
+
+function closeHotlist() {
+  setPanelOpen(hotlistModalEl, false);
+}
+
 function checkout() {
   if (state.cart.length === 0) return;
   state.cart = [];
@@ -308,6 +402,14 @@ function bindEvents() {
     }
   });
 
+  hotlistItemsEl.addEventListener("click", event => {
+    const addButton = event.target.closest("[data-hot-add]");
+    if (addButton) {
+      addToCart(addButton.dataset.hotAdd);
+      showToast("加入购物车成功", addButton);
+    }
+  });
+
   cartItemsEl.addEventListener("click", event => {
     const incButton = event.target.closest("[data-inc]");
     const decButton = event.target.closest("[data-dec]");
@@ -321,8 +423,16 @@ function bindEvents() {
     button.addEventListener("click", openCart);
   });
 
+  document.querySelectorAll("[data-open-hotlist]").forEach(button => {
+    button.addEventListener("click", openHotlist);
+  });
+
   document.querySelectorAll("[data-close-cart]").forEach(button => {
     button.addEventListener("click", closeCart);
+  });
+
+  document.querySelectorAll("[data-close-hotlist]").forEach(button => {
+    button.addEventListener("click", closeHotlist);
   });
 
   document.querySelectorAll("[data-close-detail]").forEach(button => {
@@ -345,6 +455,7 @@ function bindEvents() {
   document.addEventListener("keydown", event => {
     if (event.key !== "Escape") return;
     closeCart();
+    closeHotlist();
     closeDetail();
     setPanelOpen(successModalEl, false);
   });

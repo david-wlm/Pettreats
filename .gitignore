@@ -21,6 +21,7 @@ dist/
 build/
 coverage/
 output/
+.playwright-cli/
 
 # Local planning and historical prototype assets
 /提示词.txt

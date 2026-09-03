@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Luma Paws 天然宠物零食</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2312211c'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='24' font-family='serif' font-weight='700' fill='white'%3ELP%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,7 +20,7 @@
     <nav class="nav" aria-label="主导航">
       <a href="#products">商品</a>
       <a href="#promise">标准</a>
-      <a href="#cart">购物车</a>
+      <button type="button" data-open-hotlist>热销榜</button>
     </nav>
 
     <button class="cart-pill" type="button" data-open-cart>
@@ -152,6 +153,21 @@
     </article>
   </section>
 
+  <section class="modal-shell" id="hotlistModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-hotlist></div>
+    <article class="hotlist-card" role="dialog" aria-modal="true" aria-labelledby="hotlistTitle">
+      <button class="icon-button detail-close" type="button" data-close-hotlist aria-label="关闭热销榜">×</button>
+      <header class="hotlist-header">
+        <div>
+          <p class="eyebrow">Hot list</p>
+          <h2 id="hotlistTitle">热销榜</h2>
+        </div>
+        <p class="hotlist-summary" id="hotlistSummary"></p>
+      </header>
+      <div class="hotlist-items" id="hotlistItems"></div>
+    </article>
+  </section>
+
   <section class="modal-shell" id="successModal" aria-hidden="true">
     <div class="modal-backdrop" data-close-success></div>
     <article class="success-card" role="dialog" aria-modal="true" aria-labelledby="successTitle">
@@ -161,6 +177,8 @@
       <button class="button primary" type="button" data-close-success>继续逛逛</button>
     </article>
   </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <script src="script.js"></script>
 </body>
